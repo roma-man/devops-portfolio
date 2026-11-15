@@ -38,21 +38,36 @@ jobs:
         run: docker compose config -q
 
       - name: Build Docker Images
-        run: docker compose build
+        run: docker compose build app
 
       - name: Start Containers
-        run: docker compose up -d
+        run: docker compose up -d --no-deps app
 
       - name: Check Application Health
         run: |
+          CONTAINER_ID=$(docker compose ps -q app)
+
           for i in $(seq 1 30); do
-            if curl -fsS http://localhost/health; then
+            STATUS=$(docker inspect \
+              --format '{{.State.Health.Status}}' \
+              "$CONTAINER_ID")
+
+            echo "Application health: $STATUS"
+
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Application is healthy!"
               exit 0
             fi
+
+            if [ "$STATUS" = "unhealthy" ]; then
+              docker compose logs app
+              exit 1
+            fi
+
             sleep 2
           done
 
-          docker compose logs
+          docker compose logs app
           exit 1
 
       - name: Stop Containers
