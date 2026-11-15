@@ -1,0 +1,12 @@
+{
+  "name": "aws-devops-portfolio",
+  "version": "1.0.0",
+  "description": "AWS DevOps portfolio demonstration",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
