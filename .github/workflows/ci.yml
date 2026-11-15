@@ -1,0 +1,60 @@
+name: DevOps Portfolio CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test Node.js Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validate JavaScript
+        run: node --check app/server.js
+
+      - name: Run Application Tests
+        run: node --test tests/app.test.js
+
+      - name: Validate Docker Compose
+        run: docker compose config -q
+
+      - name: Build Docker Images
+        run: docker compose build
+
+      - name: Start Containers
+        run: docker compose up -d
+
+      - name: Check Application Health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker compose logs
+          exit 1
+
+      - name: Stop Containers
+        if: always()
+        run: docker compose down
